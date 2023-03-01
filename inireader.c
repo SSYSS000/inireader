@@ -107,16 +107,18 @@ static int is_key_name_char(int c)
     return isalnum(c) || isspace(c);
 }
 
-static int is_key_value_char(int c)
+static char *skip(const char *string, int (*test)(int))
 {
-    return !is_comment_char(c) && c != '\n';
+    while (test(*string))
+        string++;
+
+    /* Cast: caller's responsibility not to write to read-only memory. */
+    return (char *) string;
 }
 
 static int str_is_space(const char *string)
 {
-    while (isspace(*string))
-        string++;
-
+    string = skip(string, isspace);
     return IS_EMPTY_STR(string);
 }
 
@@ -124,9 +126,7 @@ static char *trim(char *str)
 {
     size_t len;
 
-    while (isspace(*str))
-        str++;
-
+    str = skip(str, isspace);
     len = strlen(str);
 
     while (len > 0 && isspace(str[len - 1]))
@@ -179,16 +179,15 @@ struct ini_object *ini_read_object(struct ini_state *state, const char *line)
     ptr = trim(ptr);
 
     if (is_comment_char(*ptr)) {
+        /* Comment */
         obj->type = INI_COMMENT;
         obj->comment.whole = ptr;
     }
     else if (*ptr == '[') {
-        endptr = ptr + 1;
+        /* Section */
+        endptr = skip(ptr + 1, is_section_char);
 
-        while (is_section_char(*endptr))
-            endptr++;
-
-        if (endptr[0] == ']' && endptr[1] == '\0') {
+        if (*endptr == ']') {
             *endptr = '\0';
             obj->type = INI_SECTION;
             obj->section.name = trim(ptr + 1);
@@ -201,9 +200,8 @@ struct ini_object *ini_read_object(struct ini_state *state, const char *line)
         }
     }
     else {
-        endptr = ptr;
-        while (is_key_name_char(*endptr))
-            endptr++;
+        /* Key */
+        endptr = skip(ptr, is_key_name_char);
 
         if (*endptr == '=') {
             *endptr = '\0';
