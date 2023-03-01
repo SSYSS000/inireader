@@ -27,6 +27,11 @@ SOFTWARE.
 #include <ctype.h>
 #include "inireader.h"
 
+#if defined(_MSC_VER)
+# define restrict __restrict
+typedef long long ssize_t;
+#endif /* defined(_MSC_VER) */
+
 #define IS_EMPTY_STR(str) ((str)[0] == '\0')
 
 #ifndef HAVE_GETLINE
