@@ -90,6 +90,14 @@ static int is_key_value_char(int c)
     return !is_comment_char(c) && c != '\n';
 }
 
+static int str_is_space(const char *string)
+{
+    while (isspace(*string))
+        string++;
+
+    return IS_EMPTY_STR(string);
+}
+
 static char *trim(char *str)
 {
     size_t len;
@@ -137,18 +145,16 @@ struct ini_object *ini_read_object(struct ini_state *state, const char *line)
     char *ptr;
     char *endptr;
 
-    /* Get to the first non-whitespace character. */
-    while (isspace(*line))
-        line++;
-
-    if (IS_EMPTY_STR(line))
+    if (state->err || str_is_space(line))
         return NULL;
 
     ptr = copy_string(&state->linebuf, &state->linebuf_cap, line);
     if (!ptr) {
-        // no memory error
+        state->err = INI_NO_MEM;
         return NULL;
     }
+
+    ptr = trim(ptr);
 
     if (is_comment_char(*ptr)) {
         obj->type = INI_COMMENT;
@@ -160,13 +166,16 @@ struct ini_object *ini_read_object(struct ini_state *state, const char *line)
         while (is_section_char(*endptr))
             endptr++;
 
-        if (*endptr == ']') {
+        if (endptr[0] == ']' && endptr[1] == '\0') {
             *endptr = '\0';
             obj->type = INI_SECTION;
             obj->section.name = trim(ptr + 1);
         }
+        else if (*endptr == '\0') {
+            state->err = INI_MISSING_SYM;
+        }
         else {
-            goto out_missing;
+            state->err = INI_INVALID_SYM;
         }
     }
     else {
@@ -180,24 +189,35 @@ struct ini_object *ini_read_object(struct ini_state *state, const char *line)
             obj->key.value = trim(endptr + 1);
             obj->type = INI_KEY;
         }
+        else if (*endptr == '\0') {
+            state->err = INI_MISSING_SYM;
+        }
         else {
-            goto out_missing;
+            state->err = INI_INVALID_SYM;
         }
     }
 
-    return obj;
+    if (state->err) {
+        state->err_index = endptr - state->linebuf;
+        return NULL;
+    }
 
-out_missing:
-    return NULL;
+    return obj;
 }
 
 static ssize_t get_next_line(struct ini_file *ini)
 {
     ssize_t line_len = 0;
 
+    errno = 0;
     line_len = getline(&ini->line, &ini->line_cap, ini->stream);
 
-    if (line_len != -1) {
+    if (line_len == -1) {
+        if (errno == ENOMEM) {
+           ini->state.err = INI_NO_MEM; 
+        }
+    }
+    else {
         ini->line_num++;
     }
 
@@ -208,10 +228,8 @@ struct ini_object *ini_get_next_object(struct ini_file *ini)
 {
     struct ini_object *obj = NULL;
 
-    while (!ini->state.err && get_next_line(ini) != -1) {
+    while (!obj && !ini->state.err && get_next_line(ini) != -1) {
         obj = ini_read_object(&ini->state, ini->line);
-        if (obj)
-            break;
     }
 
     return obj;
