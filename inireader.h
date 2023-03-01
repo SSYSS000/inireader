@@ -25,6 +25,11 @@ SOFTWARE.
 
 #include <stdio.h>
 
+#if defined(_MSC_VER)
+#define restrict __restrict
+typedef long long ssize_t;
+#endif /* defined(_MSC_VER) */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

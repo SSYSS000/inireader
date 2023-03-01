@@ -46,7 +46,7 @@ void whitespace_test(const char *ws)
     TEST_EQ(obj, NULL);
 }
 
-int run_test(int, char*[])
+int run_test(int argc, char *argv[])
 {
     EXPECT_STATE_OK();
  

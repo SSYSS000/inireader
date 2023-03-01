@@ -88,7 +88,7 @@ void test_copy_string(void)
     }
 }
 
-int run_test(int, char*[])
+int run_test(int argc, char *argv[])
 {
     test_trim();
     test_copy_string();
