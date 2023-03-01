@@ -25,6 +25,12 @@ SOFTWARE.
 
 #include <stdio.h>
 
+#if defined(_MSC_VER)
+# define INIREADER_EXPORT __declspec(dllexport)
+#else
+# define INIREADER_EXPORT
+#endif /* defined(_MSC_VER) */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -80,9 +86,11 @@ struct ini_file {
     unsigned long line_num;
 };
 
-struct ini_object *ini_read_object(struct ini_state *state, const char *line);
+INIREADER_EXPORT struct ini_object *ini_read_object(
+        struct ini_state *state,
+        const char *line);
 
-struct ini_object *ini_get_next_object(struct ini_file *ini);
+INIREADER_EXPORT struct ini_object *ini_get_next_object(struct ini_file *ini);
 
 #ifdef __cplusplus
 }
