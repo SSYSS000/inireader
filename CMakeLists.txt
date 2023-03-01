@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.0)
 
 project(inireader VERSION 0.0.1 LANGUAGES C)
 
+include(CTest)
+
 add_compile_definitions(
     VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
     VERSION_MINOR=${PROJECT_VERSION_MINOR}
