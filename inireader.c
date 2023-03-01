@@ -24,7 +24,6 @@ SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <unistd.h>
 #include <ctype.h>
 #include "inireader.h"
 
@@ -99,12 +98,12 @@ static int is_comment_char(int c)
 
 static int is_section_char(int c)
 {
-    return isalnum(c) || isspace(c) || c == '.';
+    return !(c == '\0' || c == ']');
 }
 
 static int is_key_name_char(int c)
 {
-    return isalnum(c) || isspace(c);
+    return !(c == '\0' || c == '=');
 }
 
 static char *skip(const char *string, int (*test)(int))
