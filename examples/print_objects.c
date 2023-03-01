@@ -7,6 +7,9 @@
 
 #include "../inireader.h"
 
+static const char *get_error_msg(enum ini_error_code err);
+static void highlight_error(const char *line, int index);
+
 int main(int argc, char *argv[])
 {
     struct ini_file ini = {stdin};
@@ -32,13 +35,42 @@ int main(int argc, char *argv[])
     }
     
     if (ini.state.err) {
-        fprintf(stderr, "bad stuff at %d of line %s", ini.state.err_index + 1,
-                ini.line);
+        fprintf(stderr, "error: %s at line %lu\n",
+                get_error_msg(ini.state.err), ini.line_num);
+        highlight_error(ini.line, ini.state.err_index);
     }
 
     free(ini.state.linebuf);
     free(ini.line);
 
     return 0;
+}
+
+static const char *get_error_msg(enum ini_error_code err)
+{
+    if (err == INI_MISSING_SYM)
+        return "Missing symbol";
+    else if (err == INI_INVALID_SYM)
+        return "Invalid symbol";
+    else if (err == INI_NO_MEM)
+        return strerror(ENOMEM);
+    else
+        return "Unhandled error";
+}
+
+static void highlight_error(const char *line, int index)
+{
+    int i;
+
+    fputs(line, stderr);
+    for (i = 0; i < index; ++i) {
+        if (isspace(line[i]))
+            fputc(line[i], stderr);
+        else
+            fputc(' ', stderr);
+    }
+
+    fputc('^', stderr);
+    fputc('\n', stderr);
 }
 
