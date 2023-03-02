@@ -113,7 +113,7 @@ static int is_key_name_char(int c)
 
 static char *skip(const char *string, int (*test)(int))
 {
-    while (test(*string))
+    while (test((unsigned char) *string))
         string++;
 
     /* Cast: caller's responsibility not to write to read-only memory. */
@@ -133,7 +133,7 @@ static char *trim(char *str)
     str = skip(str, isspace);
     len = strlen(str);
 
-    while (len > 0 && isspace(str[len - 1]))
+    while (len > 0 && isspace((unsigned char) str[len - 1]))
         len--;
 
     str[len] = '\0';
