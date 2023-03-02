@@ -15,6 +15,12 @@ add_library(${PROJECT_NAME} STATIC
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "inireader.h")
 
+if (CMAKE_COMPILER_IS_GNUCC)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
+elseif (MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4)
+endif()
+
 install(TARGETS ${PROJECT_NAME})
 
 add_subdirectory(examples)
