@@ -56,8 +56,8 @@ static ssize_t jh_getdelim(
 {
     int c;
     char *line;
-    ssize_t cap;
-    ssize_t line_len = 0;
+    size_t cap;
+    size_t line_len = 0;
     enum { CHUNK_SIZE = 256 };
 
     line = *lineptr;
@@ -65,13 +65,14 @@ static ssize_t jh_getdelim(
 
     do {
         if (line_len + 2 >= cap) {
-            if ((line = realloc(line, cap + CHUNK_SIZE)) == NULL) {
+            cap += CHUNK_SIZE;
+            if ((line = realloc(line, cap)) == NULL) {
                 errno = ENOMEM;
                 return -1;
             }
 
             *lineptr = line;
-            cap = *n = cap + CHUNK_SIZE;
+            *n = cap;
         }
 
         if ((c = fgetc(stream)) != EOF) {
@@ -83,7 +84,7 @@ static ssize_t jh_getdelim(
         return -1;
 
     line[line_len] = '\0';
-    return line_len;
+    return (ssize_t) line_len;
 }
 
 static ssize_t jh_getline(
@@ -182,7 +183,7 @@ struct ini_object *ini_read_object(struct ini_state *state, const char *line)
 
     ptr = trim(ptr);
 
-    if (is_comment_char(*ptr)) {
+    if (is_comment_char((unsigned char)*ptr)) {
         /* Comment */
         obj->type = INI_COMMENT;
         obj->comment.whole = ptr;
